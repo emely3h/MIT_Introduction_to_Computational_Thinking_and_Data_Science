@@ -1,9 +1,10 @@
 ###########################
 # 6.0002 Problem Set 1a: Space Cows 
-# Name:
-# Collaborators:
-# Time:
 
+
+import enum
+from json import load
+from unicodedata import name
 from ps1_partition import get_partitions
 import time
 
@@ -11,86 +12,110 @@ import time
 # Part A: Transporting Space Cows
 #================================
 
+# Questions: Greedy Algorith is optimal, both are but greedy is faster
+
 # Problem 1
 def load_cows(filename):
-    """
-    Read the contents of the given file.  Assumes the file contents contain
-    data in the form of comma-separated cow name, weight pairs, and return a
-    dictionary containing cow names as keys and corresponding weights as values.
+    cows = {}
+    cow_data = open(filename, 'r', encoding='utf-8')
+    with cow_data:
+        for line in cow_data:
+            line = line.replace('\n', '')
+            array = line.split(',')
+            cows[array[0]] = (array[1])
+    return cows
 
-    Parameters:
-    filename - the name of the data file as a string
-
-    Returns:
-    a dictionary of cow name (string), weight (int) pairs
-    """
-    # TODO: Your code here
-    pass
+cowsDic = {'Maggie': 3, 'Herman': 7, 'Britta':3, 'Hans':2, 'Oreo': 6, 'Moo Moo': 1, 'Millie': 5, 'Florence': 4, 'Henrietta': 2} #load_cows('ps1_cow_data.txt')
 
 # Problem 2
-def greedy_cow_transport(cows,limit=10):
-    """
-    Uses a greedy heuristic to determine an allocation of cows that attempts to
-    minimize the number of spaceship trips needed to transport all the cows. The
-    returned allocation of cows may or may not be optimal.
-    The greedy heuristic should follow the following method:
 
-    1. As long as the current trip can fit another cow, add the largest cow that will fit
-        to the trip
-    2. Once the trip is full, begin a new trip to transport the remaining cows
+def getTotalWeight(list):
+    if(list):
+        weight = 0
+        for item in list:
+            weight = weight + item
+        return weight
+    else:
+        return 0
 
-    Does not mutate the given dictionary of cows.
+def sort(cows: dict):
+    sortedList = []
+    keys = list(cows.keys())
+    for y in range (0, len(cows.keys())):
+        biggest = cows[keys[0]]
+        biggestName = keys[0]
+        for x in range(1, len(keys)):
+            if cows[keys[x]] > biggest:
+                biggest = cows[keys[x]]
+                biggestName = keys[x]
+        sortedList.append(biggestName)
+        keys.remove(biggestName)   
+    return sortedList
 
-    Parameters:
-    cows - a dictionary of name (string), weight (int) pairs
-    limit - weight limit of the spaceship (an int)
-    
-    Returns:
-    A list of lists, with each inner list containing the names of cows
-    transported on a particular trip and the overall list containing all the
-    trips
-    """
-    # TODO: Your code here
-    pass
+
+def greedy_cow_transport(cows: dict,limit=10):
+    weightList = []
+    nameList = []
+    counter = 0
+    cowsCopy = cows
+    while(cowsCopy):
+        sorted = sort(cowsCopy)
+        for idx,cow in enumerate(sorted):
+            if(idx == 0):
+                weightList.append([cowsCopy[cow]])
+                nameList.append([cow])
+                del cowsCopy[cow]
+            else:
+                if(getTotalWeight(weightList[counter]) + cowsCopy[cow]) < (limit+1):
+                    weightList[counter].append(cowsCopy[cow])
+                    nameList[counter].append(cow)
+                    del cowsCopy[cow]
+        counter += 1
+    return weightList
+
 
 # Problem 3
 def brute_force_cow_transport(cows,limit=10):
-    """
-    Finds the allocation of cows that minimizes the number of spaceship trips
-    via brute force.  The brute force algorithm should follow the following method:
+    # partition deletes dublicates
 
-    1. Enumerate all possible ways that the cows can be divided into separate trips 
-        Use the given get_partitions function in ps1_partition.py to help you!
-    2. Select the allocation that minimizes the number of trips without making any trip
-        that does not obey the weight limitation
-            
-    Does not mutate the given dictionary of cows.
+    startPartition = []
+    for cow in list(cows.keys()):
+        startPartition.append(cows[cow])
+    numberOfTrips = 0
+    bestPartition = [[]]
+    first = True
+    for partition in get_partitions(startPartition):
+        valid = True
+        for item in partition:
+            totalWeight = 0
+            for cow in item:
+                totalWeight = totalWeight + cow
+            if totalWeight > 10:
+                valid = False
+                #  for better efficiency break out of while loop
+        if(valid):
+            if(numberOfTrips > len(partition) or first == True):
+                first = False
+                numberOfTrips = len(partition)
+                bestPartition = partition
 
-    Parameters:
-    cows - a dictionary of name (string), weight (int) pairs
-    limit - weight limit of the spaceship (an int)
+    print("asdf")
+    return bestPartition
     
-    Returns:
-    A list of lists, with each inner list containing the names of cows
-    transported on a particular trip and the overall list containing all the
-    trips
-    """
-    # TODO: Your code here
-    pass
-        
+
+  
 # Problem 4
-def compare_cow_transport_algorithms():
-    """
-    Using the data from ps1_cow_data.txt and the specified weight limit, run your
-    greedy_cow_transport and brute_force_cow_transport functions here. Use the
-    default weight limits of 10 for both greedy_cow_transport and
-    brute_force_cow_transport.
-    
-    Print out the number of trips returned by each method, and how long each
-    method takes to run in seconds.
 
-    Returns:
-    Does not return anything.
-    """
-    # TODO: Your code here
-    pass
+def testAlogrithm(function):
+    start = time.time()
+    transportPlan = function(cowsDic)
+    stop = time.time()
+    timeNeeded = stop - start
+    print(f'Time needed: {timeNeeded} \nPlan: {transportPlan}\nNumber of trips needed: {len(transportPlan)}')
+
+def compare_cow_transport_algorithms():
+    
+    testAlogrithm(brute_force_cow_transport)
+    testAlogrithm(greedy_cow_transport)
+
+compare_cow_transport_algorithms()
