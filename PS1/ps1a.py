@@ -22,22 +22,24 @@ def load_cows(filename):
         for line in cow_data:
             line = line.replace('\n', '')
             array = line.split(',')
-            cows[array[0]] = (array[1])
+            # add cow to dicc, parse number into int
+            cows[array[0]] = int(array[1])
     return cows
 
-cowsDic = {'Maggie': 3, 'Herman': 7, 'Britta':3, 'Hans':2, 'Oreo': 6, 'Moo Moo': 1, 'Millie': 5, 'Florence': 4, 'Henrietta': 2} #load_cows('ps1_cow_data.txt')
+
 
 # Problem 2
 
+# helper function to calculate total weight in transport list
 def getTotalWeight(list):
     if(list):
         weight = 0
         for item in list:
-            weight = weight + item
+            weight = weight + item[1] # cows saved as tupel
         return weight
     else:
         return 0
-
+# helper function to sort cows by weight
 def sort(cows: dict):
     sortedList = []
     keys = list(cows.keys())
@@ -52,70 +54,74 @@ def sort(cows: dict):
         keys.remove(biggestName)   
     return sortedList
 
-
+# loop over cows and select heaviest cow and check if it still fits, if it does take next one until
+# every cow has been considered, then close transport and move on to the next one
 def greedy_cow_transport(cows: dict,limit=10):
-    weightList = []
-    nameList = []
+
+    transportList = []
+    # keep track of created nested lists
     counter = 0
-    cowsCopy = cows
+    # copy cws dic to not modify the original
+    cowsCopy = cows.copy()
     while(cowsCopy):
+        # sort cows by weight
         sorted = sort(cowsCopy)
         for idx,cow in enumerate(sorted):
             if(idx == 0):
-                weightList.append([cowsCopy[cow]])
-                nameList.append([cow])
+                # append cow weight + name in sublist
+                transportList.append([(cow, cows[cow])])
                 del cowsCopy[cow]
             else:
-                if(getTotalWeight(weightList[counter]) + cowsCopy[cow]) < (limit+1):
-                    weightList[counter].append(cowsCopy[cow])
-                    nameList[counter].append(cow)
+                # check if transport is not overweight with one more cow
+                if(getTotalWeight(transportList[counter]) + cowsCopy[cow]) <= (limit):
+                    transportList[counter].append((cow, cows[cow]))
                     del cowsCopy[cow]
         counter += 1
-    return weightList
-
+    return transportList
 
 # Problem 3
-def brute_force_cow_transport(cows,limit=10):
-    # partition deletes dublicates
-
+def brute_force_cow_transport(cowsDict: dict,limit=10):
+    # work with names instead of cow weight, otherwiese partition function does not work properly since it is 
+    # working with sets and duplicates are removed
+    cows = cowsDict.copy()
     startPartition = []
     for cow in list(cows.keys()):
         startPartition.append(cows[cow])
-    numberOfTrips = 0
+    # keep track of the current best transport list
     bestPartition = [[]]
     first = True
-    for partition in get_partitions(startPartition):
+    for partition in get_partitions(cows.keys()):
         valid = True
+        # for each possible transport list, check if it is valid
+        # loop over each transport in the transport list and check if weight limit is not overexerted
         for item in partition:
             totalWeight = 0
             for cow in item:
-                totalWeight = totalWeight + cow
+                totalWeight = totalWeight + cows[cow]
             if totalWeight > 10:
                 valid = False
-                #  for better efficiency break out of while loop
+                break
         if(valid):
-            if(numberOfTrips > len(partition) or first == True):
+            # if possilble list is valid, check if solution is more efficient than current ones
+            if(len(bestPartition) > len(partition) or first == True):
                 first = False
-                numberOfTrips = len(partition)
                 bestPartition = partition
-
-    print("asdf")
     return bestPartition
-    
 
   
-# Problem 4
-
-def testAlogrithm(function):
+# Problem 4: Compare both algorithms
+def testAlogrithm(function, cows: dict):
     start = time.time()
-    transportPlan = function(cowsDic)
+    transportPlan = function(cows)
     stop = time.time()
     timeNeeded = stop - start
     print(f'Time needed: {timeNeeded} \nPlan: {transportPlan}\nNumber of trips needed: {len(transportPlan)}')
 
 def compare_cow_transport_algorithms():
-    
-    testAlogrithm(brute_force_cow_transport)
-    testAlogrithm(greedy_cow_transport)
+    cowsDic = load_cows('ps1_cow_data.txt')
+    print('=============== Brute Force =======================')
+    testAlogrithm(brute_force_cow_transport, cowsDic)
+    print('=============== Greedy ======================')
+    testAlogrithm(greedy_cow_transport, cowsDic)
 
 compare_cow_transport_algorithms()
