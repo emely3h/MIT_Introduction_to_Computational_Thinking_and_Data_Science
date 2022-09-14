@@ -139,7 +139,6 @@ Time complexity
 - brute force: O(2^n) (n = number of cows, since we have to consider every possible combination)
 - greedy: O(n log (n)) for quick or merge sort O(n^2) for insertion sort 
 '''
-# TODO : revise time complexity
 
 #2.  Does the greedy algorithm return the optimal solution? Why/why not? 
 '''
