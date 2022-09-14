@@ -125,3 +125,29 @@ def compare_cow_transport_algorithms():
     testAlogrithm(greedy_cow_transport, cowsDic)
 
 compare_cow_transport_algorithms()
+
+
+# Problem 5: Writeup
+
+#1.  What were your results from compare_cow_transport_algorithms? Which algorithm runs faster? Why?
+'''
+brute force: 0.5 s
+greedy: 0.0001 s
+=> since the greedy algorith does not consider every possible solution it basically consists out of a
+    nested loop which is runs in complexity 
+Time complexity
+- brute force: O(2^n) (n = number of cows, since we have to consider every possible combination)
+- greedy: O(n log (n)) for quick or merge sort O(n^2) for insertion sort 
+'''
+# TODO : revise time complexity
+
+#2.  Does the greedy algorithm return the optimal solution? Why/why not? 
+'''
+In this particular case it did not, it only returned a local max, generally speaking we don't know 
+how good the returned sulution is.
+
+'''
+#3.  Does the brute force algorithm return the optimal solution? Why/why not? 
+'''
+Yes, since we consider every possible solution and select the best one.
+'''
