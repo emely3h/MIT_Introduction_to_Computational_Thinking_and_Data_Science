@@ -13,8 +13,6 @@
 # Problem 1
 memo = {}
 def dp_make_weight(egg_weights, target_weight):
-    if target_weight in egg_weights:
-        return 1
     egg_list = []
     for egg in egg_weights:
         new_weight = target_weight - egg
@@ -22,9 +20,7 @@ def dp_make_weight(egg_weights, target_weight):
             egg_list.append(memo[new_weight])
         elif new_weight >= 0:
             egg_list.append(dp_make_weight(egg_weights, new_weight))
-    min_count = min(egg_list) + 1
-    memo[target_weight] = min_count
-    return min_count
+    return
 
 # EXAMPLE TESTING CODE, feel free to add more if you'd like
 if __name__ == '__main__':

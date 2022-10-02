@@ -7,6 +7,7 @@
 #
 # Finding shortest paths through MIT buildings
 #
+from csv import Dialect
 import unittest
 from graph import Digraph, Node, WeightedEdge
 
@@ -20,35 +21,40 @@ from graph import Digraph, Node, WeightedEdge
 # represented?
 #
 # Answer:
-#
+"""    
+Each line in the text file holds 4 numbers: (start building, end building, distance, outdoor distance)
+- instanciate a new Diagraph object
+- loop over the text file and for each line instanciate check if start and endbuilding
+    already have been added as nodes to the graph, if not add them and second 
+    add the weighted edge to the start building node.
+"""
 
 
 # Problem 2b: Implementing load_map
 def load_map(map_filename):
-    """
-    Parses the map file and constructs a directed graph
+    digraph = Digraph()
 
-    Parameters:
-        map_filename : name of the map file
-
-    Assumes:
-        Each entry in the map file consists of the following four positive
-        integers, separated by a blank space:
-            From To TotalDistance DistanceOutdoors
-        e.g.
-            32 76 54 23
-        This entry would become an edge from 32 to 76.
-
-    Returns:
-        a Digraph representing the map
-    """
-
-    # TODO
     print("Loading map from file...")
+    
+    campus_data = open(map_filename, 'r', encoding='utf-8')
+    with campus_data:
+        for line in campus_data:
+            array = line.split(' ')
+            src_node = Node(array[0])
+            dest_node = Node(array[1])
+            if src_node not in digraph.edges:
+                digraph.add_node(src_node)
+            if dest_node not in digraph.edges:
+                digraph.add_node(dest_node)
+            edge = WeightedEdge(src_node, dest_node, int(array[2]), int(array[3]))
+            digraph.add_edge(edge)
+    print("finished")
+    return digraph
 
 # Problem 2c: Testing load_map
 # Include the lines used to test load_map below, but comment them out
-
+def test_load_map():
+    
 
 #
 # Problem 3: Finding the Shorest Path using Optimized Search Method
@@ -217,4 +223,6 @@ class Ps2Test(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    #unittest.main()
+    digraph = load_map("mit_map.txt")
+    print(digraph.__str__())
