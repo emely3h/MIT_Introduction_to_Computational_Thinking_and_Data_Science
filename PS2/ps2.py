@@ -54,6 +54,25 @@ def load_map(map_filename):
 # Problem 2c: Testing load_map
 # Include the lines used to test load_map below, but comment them out
 def test_load_map():
+    digraph = load_map('test_load_map.txt')
+    digraph_test = Digraph()
+    node1 = Node('1')
+    node2 = Node('2')
+    node3 = Node('3')
+    node4 = Node('4')
+    digraph_test.add_node(node1)
+    digraph_test.add_node(node2)
+    digraph_test.add_node(node3)
+    digraph_test.add_node(node4)
+    edge1 = WeightedEdge(node1, node2, 70, 30)
+    edge2 = WeightedEdge(node2, node3, 70, 5)
+    edge3 = WeightedEdge(node1, node3, 30, 10)
+    edge4 = WeightedEdge(node1, node4, 30, 10)
+    digraph_test.add_edge(edge1)
+    digraph_test.add_edge(edge2)
+    digraph_test.add_edge(edge3)
+    digraph_test.add_edge(edge4)
+    return (digraph.__str__() == digraph_test.__str__())
     
 
 #
@@ -225,4 +244,5 @@ class Ps2Test(unittest.TestCase):
 if __name__ == "__main__":
     #unittest.main()
     digraph = load_map("mit_map.txt")
-    print(digraph.__str__())
+    #print(digraph.__str__())
+    print(test_load_map())
