@@ -5,9 +5,11 @@
 # Time:
 
 import math
+from multiprocessing.sharedctypes import Value
+from operator import truediv
 import random
 
-import ps3_visualize
+#import ps3_visualize
 import pylab
 
 # For python 2.7:
@@ -76,12 +78,18 @@ class RectangularRoom(object):
         """
         Initializes a rectangular room with the specified width, height, and 
         dirt_amount on each tile.
-
-        width: an integer > 0
-        height: an integer > 0
-        dirt_amount: an integer >= 0
+        every tile has in the beginnig same amount of dirt
         """
-        raise NotImplementedError
+        if width > 0 and height > 0 and dirt_amount >= 0:
+            self.width = width
+            self.height = height
+            self.tiles = {}
+            for x in width:
+                for y in height:
+                    self.tiles[f'${x}{y}'] = dirt_amount
+            self.dirt_amount = dirt_amount
+        else:
+            raise ValueError("Room must have positive width, height and amount of dirt can not be negative.")
     
     def clean_tile_at_position(self, pos, capacity):
         """
@@ -96,29 +104,41 @@ class RectangularRoom(object):
         Note: The amount of dirt on each tile should be NON-NEGATIVE.
               If the capacity exceeds the amount of dirt on the tile, mark it as 0.
         """
+        if capacity < 0:
+            raise ValueError('Amount of dirt can not be negative.')
+        if pos.x > self.width or pos.y > self.height:
+            raise ValueError('Position not in room.') 
+        x = math.ceil(pos.get_x())
+        y = math.ceil(pos.get_y())
+        after_clean = self.tiles[f'{x}{y}'] - capacity
+        if after_clean < 0:
+            self.tiles[f'{pos}'] = 0
+        else:
+            self.tiles[f'{pos}'] = after_clean
         raise NotImplementedError
 
     def is_tile_cleaned(self, m, n):
         """
         Return True if the tile (m, n) has been cleaned.
-
         Assumes that (m, n) represents a valid tile inside the room.
-
         m: an integer
         n: an integer
-        
-        Returns: True if the tile (m, n) is cleaned, False otherwise
-
-        Note: The tile is considered clean only when the amount of dirt on this
-              tile is 0.
         """
-        raise NotImplementedError
+        if self.tiles[f'{m}{n}'] == 0:
+            return True
+        else:
+            return False
 
     def get_num_cleaned_tiles(self):
         """
         Returns: an integer; the total number of clean tiles in the room
         """
-        raise NotImplementedError
+        count = 0
+        for x in self.width:
+            for y in self.height:
+                if self.tiles[f'{x}{y}'] == 0:
+                    count += 1
+        return count
         
     def is_position_in_room(self, pos):
         """
