@@ -84,8 +84,8 @@ class RectangularRoom(object):
             self.width = width
             self.height = height
             self.tiles = {}
-            for x in range(1, width):
-                for y in range(1,height):
+            for x in range(0, width+1):
+                for y in range(0,height+1):
                     key = '(%s|%s)' % (x,y)
                     self.tiles[key] = dirt_amount
             self.dirt_amount = dirt_amount
