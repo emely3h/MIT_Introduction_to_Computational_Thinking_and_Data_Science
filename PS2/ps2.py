@@ -8,6 +8,7 @@
 # Finding shortest paths through MIT buildings
 #
 from csv import Dialect
+from signal import SIG_DFL
 import unittest
 from graph import Digraph, Node, WeightedEdge
 
@@ -83,11 +84,13 @@ def test_load_map():
 # What is the objective function for this problem? What are the constraints?
 #
 # Answer:
-#
+"""
+Goal is to find a function that returns the shortest (= least amount of meters) possible path from A to B. Constraint 
+might be a max. amount of meters outside
+"""
 
 # Problem 3b: Implement get_best_path
-def get_best_path(digraph, start, end, path, max_dist_outdoors, best_dist,
-                  best_path):
+def get_best_path(digraph, start, end, path,  best_path, max_dist_outdoors, best_dist):
     """
     Finds the shortest path between buildings subject to constraints.
 
@@ -120,8 +123,22 @@ def get_best_path(digraph, start, end, path, max_dist_outdoors, best_dist,
         If there exists no path that satisfies max_total_dist and
         max_dist_outdoors constraints, then return None.
     """
-    # TODO
-    pass
+    path = [path[0] + [start]]
+    if len(path) < 2:
+        path.append(0)
+    if(start == end):
+        return path
+    start_node = Node(start)
+    edges = digraph.get_edges_for_node(start_node)
+    for edge in edges:
+        start = edge.get_destination().get_name()
+        if(start not in path):
+            if best_path == None or path[1] <  best_dist:
+                path[1] += edge.get_total_distance()
+                new_path = get_best_path(digraph, edge.get_destination().get_name(), end, path, best_path, max_dist_outdoors, best_dist)
+                if new_path != None:
+                    best_path = new_path
+    return best_path
 
 
 # Problem 3c: Implement directed_dfs
@@ -243,6 +260,9 @@ class Ps2Test(unittest.TestCase):
 
 if __name__ == "__main__":
     #unittest.main()
-    digraph = load_map("mit_map.txt")
+    #digraph = load_map("test_load_map.txt")
+    digraph = load_map("PS2/test_load_map.txt")
     #print(digraph.__str__())
-    print(test_load_map())
+    #print(test_load_map())
+    #print(digraph.__str__())
+    print(get_best_path(digraph, "4", "6", [[]], None, 0, 0))
