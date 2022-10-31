@@ -204,7 +204,8 @@ class Robot(object):
         self.room = room
         self.speed = speed
         self.capacity = capacity
-        self.direction = random.random() * 360
+        self.direction = 0
+        self.set_new_random_direction()
         self.position = room.get_random_position()
 
     def get_robot_position(self):
@@ -244,6 +245,17 @@ class Robot(object):
         """
         # do not change -- implement in subclasses
         raise NotImplementedError
+
+    def set_new_random_direction(self):
+        self.direction =  random.random() * 360
+
+    def is_hit(self):
+        """
+        True if on next step robot will hit wall or furniture
+        """
+        return self.room.is_position_valid(self.position.get_new_position(self.direction, self.speed))
+
+
 
 # === Problem 2
 class EmptyRoom(RectangularRoom):
@@ -379,12 +391,11 @@ class StandardRobot(Robot):
         rotate once to a random new direction, and stay stationary) and clean the dirt on the tile
         by its given capacity. 
         """
-        new_position = self.get_robot_position().get_new_position(self.direction, self.speed)
-        while self.room.is_position_valid(new_position) == False:
-            self.direction = random.random() * 360
-            new_position = self.get_robot_position().get_new_position(self.direction, self.speed)
-        self.set_robot_position(new_position)
-        self.room.clean_tile_at_position(new_position, self.capacity)
+        if self.is_hit():
+            self.set_new_random_direction()
+        else:
+            self.position = self.position.get_new_position(self.direction, self.speed)
+            self.room.clean_tile_at_position(self.position, self.capacity)
 
 
 # Uncomment this line to see your implementation of StandardRobot in action!
@@ -429,7 +440,15 @@ class FaultyRobot(Robot):
         StandardRobot at this time-step (checking if it can move to a new position,
         move there if it can, pick a new direction and stay stationary if it can't)
         """
-        raise NotImplementedError
+        if self.gets_faulty():
+            self.set_new_random_direction()
+        else:
+            # wouldn't it be better to have this in baseclass robot, so that code in FaultyRobot and StandardRobot is not repeating?
+            if self.is_hit():
+                self.set_new_random_direction()
+            else:
+                self.position = self.position.get_new_position(self.direction, self.speed)
+                self.room.clean_tile_at_position(self.position, self.capacity)
         
     
 #test_robot_movement(FaultyRobot, EmptyRoom)
@@ -456,14 +475,43 @@ def run_simulation(num_robots, speed, capacity, width, height, dirt_amount, min_
     robot_type: class of robot to be instantiated (e.g. StandardRobot or
                 FaultyRobot)
     """
-    raise NotImplementedError
+    results = []
+    for i in range(0, num_trials):
+        results. append(run_trial(num_robots, speed, capacity, width, height, dirt_amount, min_coverage, robot_type))
+    
+    average = 0
+    for r in results:
+        average += r
+    average = average / (len(results)-1)
+    return average
+
+    
+def run_trial(num_robots, speed, capacity, width, height, dirt_amount, min_coverage, robot_type):
+    room = EmptyRoom(width, height, dirt_amount)
+
+    robots = []
+
+    for r in range(0, num_robots):
+        robots.append(robot_type(room, speed, capacity))
+    
+    counter = 0
+    all_tiles = room.get_num_tiles()
+    cleaned_tiles = room.get_num_cleaned_tiles()
+    cleaned_percentage = 100 / all_tiles * cleaned_tiles
+    while cleaned_percentage < min_coverage:
+        for r in robots:
+            r.update_position_and_clean()
+        counter += 1
+    return counter
 
 
-# print ('avg time steps: ' + str(run_simulation(1, 1.0, 1, 5, 5, 3, 1.0, 50, StandardRobot)))
-# print ('avg time steps: ' + str(run_simulation(1, 1.0, 1, 10, 10, 3, 0.8, 50, StandardRobot)))
-# print ('avg time steps: ' + str(run_simulation(1, 1.0, 1, 10, 10, 3, 0.9, 50, StandardRobot)))
-# print ('avg time steps: ' + str(run_simulation(1, 1.0, 1, 20, 20, 3, 0.5, 50, StandardRobot)))
-# print ('avg time steps: ' + str(run_simulation(3, 1.0, 1, 20, 20, 3, 0.5, 50, StandardRobot)))
+
+
+print ('avg time steps: ' + str(run_simulation(1, 1.0, 1, 5, 5, 3, 1.0, 50, StandardRobot)))
+print ('avg time steps: ' + str(run_simulation(1, 1.0, 1, 10, 10, 3, 0.8, 50, StandardRobot)))
+print ('avg time steps: ' + str(run_simulation(1, 1.0, 1, 10, 10, 3, 0.9, 50, StandardRobot)))
+print ('avg time steps: ' + str(run_simulation(1, 1.0, 1, 20, 20, 3, 0.5, 50, StandardRobot)))
+print ('avg time steps: ' + str(run_simulation(3, 1.0, 1, 20, 20, 3, 0.5, 50, StandardRobot)))
 
 # === Problem 6
 #
@@ -471,13 +519,27 @@ def run_simulation(num_robots, speed, capacity, width, height, dirt_amount, min_
 #
 # 1)How does the performance of the two robot types compare when cleaning 80%
 #       of a 20x20 room?
-#
-#
+def question_1():
+    print(f'The standart robot needed on average {run_simulation(1, 1, 1, 20 ,20 ,3 ,0.8 ,100 ,StandardRobot)} steps to clean the entire room.')
+    print(f'The faulty robot needed on average {run_simulation(1, 1, 1, 20 ,20 ,3 ,0.8 ,100 ,FaultyRobot)} steps to clean the entire room.')
+
 # 2) How does the performance of the two robot types compare when two of each
 #       robot cleans 80% of rooms with dimensions 
 #       10x30, 20x15, 25x12, and 50x6?
-#
-#
+def question_2():
+    print('======Room 10 x 30==================')
+    print(f'The standart robot needed on average {run_simulation(2, 1, 1, 20 ,20 ,3 ,0.8 ,100 ,StandardRobot)} steps to clean the entire room.')
+    print(f'The faulty robot needed on average {run_simulation(2, 1, 1, 20 ,20 ,3 ,0.8 ,100 ,FaultyRobot)} steps to clean the entire room.')
+    print('======Room 20 x 15==================')
+    print(f'The standart robot needed on average {run_simulation(2, 1, 1, 20 ,15 ,3 ,0.8 ,100 ,StandardRobot)} steps to clean the entire room.')
+    print(f'The faulty robot needed on average {run_simulation(2, 1, 1, 20 ,15 ,3 ,0.8 ,100 ,FaultyRobot)} steps to clean the entire room.')
+    print('======Room 25 x 12==================')
+    print(f'The standart robot needed on average {run_simulation(2, 1, 1, 25 ,12 ,3 ,0.8 ,100 ,StandardRobot)} steps to clean the entire room.')
+    print(f'The faulty robot needed on average {run_simulation(2, 1, 1, 25 ,12 ,3 ,0.8 ,100 ,FaultyRobot)} steps to clean the entire room.')
+    print('======Room 50 x 6==================')
+    print(f'The standart robot needed on average {run_simulation(2, 1, 1, 50 ,6 ,3 ,0.8 ,100 ,StandardRobot)} steps to clean the entire room.')
+    print(f'The faulty robot needed on average {run_simulation(2, 1, 1, 50 ,6 ,3 ,0.8 ,100 ,FaultyRobot)} steps to clean the entire room.')
+
 
 def show_plot_compare_strategies(title, x_label, y_label):
     """
