@@ -7,6 +7,7 @@ import math
 import numpy as np
 import pylab as pl
 import random
+import requests
 
 
 ##########################
@@ -88,7 +89,8 @@ class SimpleBacteria(object):
                 probability
             death_prob (float in [0, 1]): Maximum death probability
         """
-        pass  # TODO
+        self.birth_prob = birth_prob
+        self.death_prob = death_prob
 
     def is_killed(self):
         """
@@ -99,7 +101,7 @@ class SimpleBacteria(object):
         Returns:
             bool: True with probability self.death_prob, False otherwise.
         """
-        pass  # TODO
+        return (random.random() <= self.death_prob)
 
     def reproduce(self, pop_density):
         """
@@ -127,7 +129,10 @@ class SimpleBacteria(object):
         Raises:
             NoChildException if this bacteria cell does not reproduce.
         """
-        pass  # TODO
+        if random.random() <= self.birth_prob*(1 - pop_density):
+            return SimpleBacteria(self.birth_prob, self.death_prob)
+
+        else: NoChildException() 
 
 
 class Patient(object):
@@ -142,7 +147,8 @@ class Patient(object):
             max_pop (int): Maximum possible bacteria population size for
                 this patient
         """
-        pass  # TODO
+        self.bacteria = bacteria
+        self.max_pop = max_pop
 
     def get_total_pop(self):
         """
@@ -151,7 +157,7 @@ class Patient(object):
         Returns:
             int: The total bacteria population
         """
-        pass  # TODO
+        return len(self.bacteria)
 
     def update(self):
         """
@@ -177,7 +183,26 @@ class Patient(object):
         Returns:
             int: The total bacteria population at the end of the update
         """
-        pass  # TODO
+
+        survived_bacteria = list()
+        for bac in self.bacteria:
+            if not bac.is_killed():
+                survived_bacteria.append(bac)
+
+        self.bacteria = survived_bacteria
+
+        new_pop_density = len(self.bacteria) / self.max_pop
+
+        reproduced_bacteria = []
+        for bac in survived_bacteria:
+            child = bac.reproduce(new_pop_density)
+            if child is not None:
+                reproduced_bacteria.append(child)
+
+        
+        self.bacteria += reproduced_bacteria
+
+        return len(self.bacteria)
 
 
 ##########################
@@ -195,7 +220,11 @@ def calc_pop_avg(populations, n):
     Returns:
         float: The average bacteria population size at time step n
     """
-    pass  # TODO
+    pop_sizes = list()
+    for trial in populations:
+        pop_sizes.append(trial[n])
+    
+    return sum(pop_sizes) / float(len(pop_sizes))
 
 
 def simulation_without_antibiotic(num_bacteria,
@@ -231,11 +260,45 @@ def simulation_without_antibiotic(num_bacteria,
         populations (list of lists or 2D array): populations[i][j] is the
             number of bacteria in trial i at time step j
     """
-    pass  # TODO
+    populations = list()
+    timesteps = 300
 
+    for t in range (0, num_trials):
+        bacteria = list()
+        for b in range (0, num_bacteria):
+           bacteria.append(SimpleBacteria(birth_prob, death_prob))
+        patient = Patient(bacteria, max_pop)
+
+        
+        pop_for_Steps = list()
+        for s in range(0, timesteps):
+            pop_for_Steps.append(patient.get_total_pop())
+            patient.update()
+        
+        populations.append(pop_for_Steps)
+    
+    #Plot
+    def get_x_coords():
+        x_coords = list()
+        for i in range(timesteps):
+            x_coords.append(i)
+        return x_coords
+
+    def get_y_coords():
+        y_coords = list()
+        for i in range(timesteps):
+            y_coords.append(calc_pop_avg(populations, i))
+        return y_coords
+
+    make_one_curve_plot(get_x_coords(), get_y_coords(), "time-steps", "Population", "Population over time without antibiotic")
+    print('plot created')
+
+    return populations 
+    
 
 # When you are ready to run the simulation, uncomment the next line
-# populations = simulation_without_antibiotic(100, 1000, 0.1, 0.025, 50)
+populations = simulation_without_antibiotic(100, 1000, 0.1, 0.025, 50)
+
 
 ##########################
 # PROBLEM 3
