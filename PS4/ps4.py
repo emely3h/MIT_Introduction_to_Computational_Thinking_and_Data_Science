@@ -377,11 +377,15 @@ class ResistantBacteria(SimpleBacteria):
                 bacteria cell. This is the maximum probability of the
                 offspring acquiring antibiotic resistance
         """
-        pass  # TODO
+        self.birth_prob = birth_prob
+        self.death_prob = death_prob
+        self.resistant = resistant
+        self.mut_prob = mut_prob
+
 
     def get_resistant(self):
         """Returns whether the bacteria has antibiotic resistance"""
-        pass  # TODO
+        return self.resistant
 
     def is_killed(self):
         """Stochastically determines whether this bacteria cell is killed in
@@ -395,7 +399,11 @@ class ResistantBacteria(SimpleBacteria):
             bool: True if the bacteria dies with the appropriate probability
                 and False otherwise.
         """
-        pass  # TODO
+        if self.get_resistant():
+            return (random.random() <= self.death_prob)
+        else: 
+            return (random.random() <= self.death_prob / float(4))
+        
 
     def reproduce(self, pop_density):
         """
@@ -426,7 +434,14 @@ class ResistantBacteria(SimpleBacteria):
             as this bacteria. Otherwise, raises a NoChildException if this
             bacteria cell does not reproduce.
         """
-        pass  # TODO
+        if random.random() <= self.birth_prob*(1 - pop_density):
+            new_resistant = True
+            if not self.resistant:
+                if not random.random() <= self.mut_prob * (1-pop_density):
+                    new_resistant = False
+            return ResistantBacteria(self.birth_prob, self.death_prob, new_resistant, self.mut_prob)
+
+        else: NoChildException() 
 
 
 class TreatedPatient(Patient):
@@ -449,14 +464,16 @@ class TreatedPatient(Patient):
         Don't forget to call Patient's __init__ method at the start of this
         method.
         """
-        pass  # TODO
+        self.bacteria = bacteria
+        self.max_pop = max_pop
+        self.on_antibiotic = False
 
     def set_on_antibiotic(self):
         """
         Administer an antibiotic to this patient. The antibiotic acts on the
         bacteria population for all subsequent time steps.
         """
-        pass  # TODO
+        self.on_antibiotic = True
 
     def get_resist_pop(self):
         """
@@ -465,7 +482,11 @@ class TreatedPatient(Patient):
         Returns:
             int: the number of bacteria with antibiotic resistance
         """
-        pass  # TODO
+        resist_pop = 0
+        for bacterium in self.bacteria:
+            if bacterium.get_resistant():
+                resist_pop += 1
+        return resist_pop
 
     def update(self):
         """
@@ -492,7 +513,31 @@ class TreatedPatient(Patient):
         Returns:
             int: The total bacteria population at the end of the update
         """
-        pass  # TODO
+        survived_bacteria = list()
+
+        for bac in self.bacteria:
+            if not bac.is_killed():
+                if self.on_antibiotic:
+                    if bac.resistant:
+                        survived_bacteria.append(bac)
+                else:
+                    survived_bacteria.append(bac)
+
+        self.bacteria = survived_bacteria
+
+        new_pop_density = len(self.bacteria) / self.max_pop
+
+        reproduced_bacteria = []
+        for bac in survived_bacteria:
+            child = bac.reproduce(new_pop_density)
+            if child is not None:
+                reproduced_bacteria.append(child)
+
+        
+        self.bacteria += reproduced_bacteria
+
+        return len(self.bacteria)
+
 
 
 ##########################
@@ -543,7 +588,49 @@ def simulation_with_antibiotic(num_bacteria,
             resistant_pop[i][j] is the number of resistant bacteria for
             trial i at time step j
     """
-    pass  # TODO
+    populations = list()
+    resistant_populations = list()
+
+    timesteps = 400
+
+    for t in range (0, num_trials):
+        bacteria = list()
+        for b in range (0, num_bacteria):
+           bacteria.append(ResistantBacteria(birth_prob, death_prob, resistant, mut_prob))
+        patient = TreatedPatient(bacteria, max_pop)
+
+        
+        pop_for_Steps = list()
+        pop_resistant_for_Steps = list()
+        for s in range(0, timesteps):
+            if s == 151:
+                patient.set_on_antibiotic()
+            pop_for_Steps.append(patient.get_total_pop())
+            pop_resistant_for_Steps.append(patient.get_resist_pop())
+            patient.update()
+        
+        populations.append(pop_for_Steps)
+        resistant_populations.append(pop_resistant_for_Steps)
+    
+    def get_x_coords():
+        x_coords = list()
+        for i in range(timesteps):
+            x_coords.append(i)
+        return x_coords
+
+    def get_y_coords():
+        y_coords_total = list()
+        y_coords_resistant = list()
+        
+        for i in range(timesteps):
+            y_coords_total.append(calc_pop_avg(populations, i))
+            y_coords_resistant.append(calc_pop_avg(resistant_populations, i))
+        return [y_coords_total, y_coords_resistant]
+
+    y = get_y_coords()
+    make_two_curve_plot(get_x_coords(), y[0], y[1],"Resistant Population", "Total population", "time-steps", "Population", "Population over time with an antibiotic")
+
+    return [populations, resistant_populations]
 
 
 # When you are ready to run the simulations, uncomment the next lines one
@@ -551,3 +638,28 @@ def simulation_with_antibiotic(num_bacteria,
 #total_pop, resistant_pop = simulation_with_antibiotic(num_bacteria=100, max_pop=1000, birth_prob=0.3, death_prob=0.2, resistant=False, mut_prob=0.8,num_trials=50)
 
 #total_pop, resistant_pop = simulation_with_antibiotic(num_bacteria=100, max_pop=1000, birth_prob=0.17, death_prob=0.2, resistant=False, mut_prob=0.8, num_trials=50)
+
+
+##########################
+# Write-up
+##########################
+
+"""
+1. What happens to the total population before introducing the antibiotic?
+
+    Simulation A: The population increases and converges at around timestep 80, avg pop 880 because auf the increasing population density.
+    Simulation B: The population increases even faster than in simulation A but reaches it max much earlier at 175. It then decreases more slowly until unifying with the resistant 
+                  population at timestep 150.
+
+2. What happens to the resistant bacteria population before introducing the antibiotic?
+    Simulation A: It fist increases, reaching it's max at timestep 25, avg pop 250, then decreases
+    Simulation B: It increases, reaching it's max at timestep 40, avg pop 90 and then slowly decreases
+
+3. What happens to the total population after introducing the antibiotic?
+    Simulation A: Drops heavily from 900 to 80 then slowly increasing again, tends to converge
+    Simulation B: Drops but not as much as in Simulation A, from 90 to 40 then slowly dropping further converges to 0
+
+4. What happens to the resistant bacteria population after introducing the antibiotic?
+    Simulation A: Like total population  slowly increasing again, tends to converge
+    Simulation B: Like total population drops, slowly dropping further converges to 0
+"""
