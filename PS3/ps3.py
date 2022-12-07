@@ -57,7 +57,6 @@ class Position(object):
         # Add that to the existing position
         new_x = old_x + delta_x
         new_y = old_y + delta_y
-        
         return Position(new_x, new_y)
 
     def __str__(self):  
@@ -274,8 +273,8 @@ class EmptyRoom(RectangularRoom):
         
         Returns: True if pos is in the room, False otherwise.
         """
-        return pos.get_x() < self.width and pos.get_y() < self.height and pos.get_x() >= 0 and pos.get_y() >= 0
-        
+        valid =  pos.get_x() < self.width and pos.get_y() < self.height and pos.get_x() >= 0 and pos.get_y() >= 0
+        return not valid
     def get_random_position(self):
         """
         Returns: a Position object; a valid random position (inside the room).
@@ -396,7 +395,7 @@ class StandardRobot(Robot):
         else:
             self.position = self.position.get_new_position(self.direction, self.speed)
             self.room.clean_tile_at_position(self.position, self.capacity)
-
+            
 
 # Uncomment this line to see your implementation of StandardRobot in action!
 #test_robot_movement(StandardRobot, EmptyRoom)
@@ -478,11 +477,10 @@ def run_simulation(num_robots, speed, capacity, width, height, dirt_amount, min_
     results = []
     for i in range(0, num_trials):
         results. append(run_trial(num_robots, speed, capacity, width, height, dirt_amount, min_coverage, robot_type))
-    
     average = 0
     for r in results:
         average += r
-    average = average / (len(results)-1)
+    average = average / (len(results))
     return average
 
     
@@ -495,23 +493,28 @@ def run_trial(num_robots, speed, capacity, width, height, dirt_amount, min_cover
         robots.append(robot_type(room, speed, capacity))
     
     counter = 0
-    all_tiles = room.get_num_tiles()
-    cleaned_tiles = room.get_num_cleaned_tiles()
-    cleaned_percentage = 100 / all_tiles * cleaned_tiles
+    
+    cleaned_percentage = get_cleaned_percentage(room)
+    
     while cleaned_percentage < min_coverage:
         for r in robots:
             r.update_position_and_clean()
         counter += 1
+        cleaned_percentage = get_cleaned_percentage(room)
     return counter
 
+def get_cleaned_percentage(room):
+    all_tiles = room.get_num_tiles()
+    cleaned_tiles = room.get_num_cleaned_tiles()
+    return 100 / all_tiles * cleaned_tiles
 
 
-
-print ('avg time steps: ' + str(run_simulation(1, 1.0, 1, 5, 5, 3, 1.0, 50, StandardRobot)))
-print ('avg time steps: ' + str(run_simulation(1, 1.0, 1, 10, 10, 3, 0.8, 50, StandardRobot)))
-print ('avg time steps: ' + str(run_simulation(1, 1.0, 1, 10, 10, 3, 0.9, 50, StandardRobot)))
-print ('avg time steps: ' + str(run_simulation(1, 1.0, 1, 20, 20, 3, 0.5, 50, StandardRobot)))
-print ('avg time steps: ' + str(run_simulation(3, 1.0, 1, 20, 20, 3, 0.5, 50, StandardRobot)))
+# varying room width + height, min_coverage, nuber of robots: 1 < 5 < 2 < 3 < 4
+# print ('1 avg time steps: ' + str(run_simulation(1, 1.0, 1, 5, 5, 3, 1.0, 50, StandardRobot)))
+# print ('2 avg time steps: ' + str(run_simulation(1, 1.0, 1, 10, 10, 3, 0.8, 50, StandardRobot)))
+# print ('3 avg time steps: ' + str(run_simulation(1, 1.0, 1, 10, 10, 3, 0.9, 50, StandardRobot)))
+# print ('4 avg time steps: ' + str(run_simulation(1, 1.0, 1, 20, 20, 3, 0.5, 50, StandardRobot)))
+# print ('5 avg time steps: ' + str(run_simulation(3, 1.0, 1, 20, 20, 3, 0.5, 50, StandardRobot)))
 
 # === Problem 6
 #
@@ -519,9 +522,12 @@ print ('avg time steps: ' + str(run_simulation(3, 1.0, 1, 20, 20, 3, 0.5, 50, St
 #
 # 1)How does the performance of the two robot types compare when cleaning 80%
 #       of a 20x20 room?
+
 def question_1():
     print(f'The standart robot needed on average {run_simulation(1, 1, 1, 20 ,20 ,3 ,0.8 ,100 ,StandardRobot)} steps to clean the entire room.')
     print(f'The faulty robot needed on average {run_simulation(1, 1, 1, 20 ,20 ,3 ,0.8 ,100 ,FaultyRobot)} steps to clean the entire room.')
+# question_1() 
+# 163 vs. 129
 
 # 2) How does the performance of the two robot types compare when two of each
 #       robot cleans 80% of rooms with dimensions 
@@ -539,7 +545,7 @@ def question_2():
     print('======Room 50 x 6==================')
     print(f'The standart robot needed on average {run_simulation(2, 1, 1, 50 ,6 ,3 ,0.8 ,100 ,StandardRobot)} steps to clean the entire room.')
     print(f'The faulty robot needed on average {run_simulation(2, 1, 1, 50 ,6 ,3 ,0.8 ,100 ,FaultyRobot)} steps to clean the entire room.')
-
+#question_2()
 
 def show_plot_compare_strategies(title, x_label, y_label):
     """
@@ -550,7 +556,6 @@ def show_plot_compare_strategies(title, x_label, y_label):
     times1 = []
     times2 = []
     for num_robots in num_robot_range:
-        print ("Plotting", num_robots, "robots...")
         times1.append(run_simulation(num_robots, 1.0, 1, 20, 20, 3, 0.8, 20, StandardRobot))
         times2.append(run_simulation(num_robots, 1.0, 1, 20, 20, 3, 0.8, 20, FaultyRobot))
     pylab.plot(num_robot_range, times1)
@@ -560,7 +565,7 @@ def show_plot_compare_strategies(title, x_label, y_label):
     pylab.xlabel(x_label)
     pylab.ylabel(y_label)
     pylab.show()
-    
+  
 def show_plot_room_shape(title, x_label, y_label):
     """
     Produces a plot showing dependence of cleaning time on room shape.
@@ -569,8 +574,7 @@ def show_plot_room_shape(title, x_label, y_label):
     times1 = []
     times2 = []
     for width in [10, 20, 25, 50]:
-        height = 300/width
-        print ("Plotting cleaning time for a room of width:", width, "by height:", height)
+        height = int(300/width)
         aspect_ratios.append(float(width) / height)
         times1.append(run_simulation(2, 1.0, 1, width, height, 3, 0.8, 200, StandardRobot))
         times2.append(run_simulation(2, 1.0, 1, width, height, 3, 0.8, 200, FaultyRobot))
@@ -584,4 +588,4 @@ def show_plot_room_shape(title, x_label, y_label):
 
 
 #show_plot_compare_strategies('Time to clean 80% of a 20x20 room, for various numbers of robots','Number of robots','Time / steps')
-#show_plot_room_shape('Time to clean 80% of a 300-tile room for various room shapes','Aspect Ratio', 'Time / steps')
+show_plot_room_shape('Time to clean 80% of a 300-tile room for various room shapes','Aspect Ratio', 'Time / steps')
